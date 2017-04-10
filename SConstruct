@@ -120,48 +120,53 @@ prjs = [
       "srcs": glob.glob("src/*.c"),
       "install": {"include": glob.glob("include/*.h")}
    },
-   {  "name": "lcms2_utils",
+   {  "name": "lcms2_tools_common",
       "type": "staticlib",
       "defines": lcms_defs,
       "srcs": glob.glob("utils/common/*.c")
    },
    {  "name": "jpgicc",
+      "alias": "lcms2-tools",
       "type": "program",
       "incdirs": ["utils/common"],
       "srcs": glob.glob("utils/jpgicc/*.c"),
-      "staticlibs": ["lcms2_utils"],
+      "staticlibs": ["lcms2_tools_common"],
       "deps": ["liblcms2"] + jpgicc_deps,
       "custom": [RequireLCMS2, JpegRequire]
    },
    {  "name": "tificc",
       "type": "program",
+      "alias": "lcms2-tools",
       "incdirs": ["utils/common"],
       "srcs": ["utils/tificc/tificc.c"],
-      "staticlibs": ["lcms2_utils"],
+      "staticlibs": ["lcms2_tools_common"],
       "deps": ["liblcms2"] + tificc_deps,
       "custom": [RequireLCMS2, TiffRequire]
    },
    {  "name": "linkicc",
       "type": "program",
+      "alias": "lcms2-tools",
       "incdirs": ["utils/common"],
       "srcs": glob.glob("utils/linkicc/*.c"),
-      "staticlibs": ["lcms2_utils"],
+      "staticlibs": ["lcms2_tools_common"],
       "deps": ["liblcms2"],
       "custom": [RequireLCMS2]
    },
    {  "name": "psicc",
       "type": "program",
+      "alias": "lcms2-tools",
       "incdirs": ["utils/common"],
       "srcs": glob.glob("utils/psicc/*.c"),
-      "staticlibs": ["lcms2_utils"],
+      "staticlibs": ["lcms2_tools_common"],
       "deps": ["liblcms2"],
       "custom": [RequireLCMS2]
    },
    {  "name": "transicc",
       "type": "program",
+      "alias": "lcms2-tools",
       "incdirs": ["utils/common"],
       "srcs": glob.glob("utils/transicc/*.c"),
-      "staticlibs": ["lcms2_utils"],
+      "staticlibs": ["lcms2_tools_common"],
       "deps": ["liblcms2"],
       "custom": [RequireLCMS2]
    }
@@ -170,6 +175,7 @@ prjs = [
 
 excons.DeclareTargets(env, prjs)
 
-
 Export("LCMS2Name LCMS2Path RequireLCMS2")
+
+Default(["liblcms2"])
 
