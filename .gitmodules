@@ -1,0 +1,15 @@
+[submodule "excons"]
+	path = excons
+	url = git://github.com/gatgui/excons
+[submodule "zlib"]
+	path = zlib
+	url = git://github.com/gatgui/zlib
+[submodule "libtiff"]
+	path = libtiff
+	url = git://github.com/gatgui/libtiff
+[submodule "libjpeg-turbo"]
+	path = libjpeg-turbo
+	url = git://github.com/gatgui/libjpeg-turbo
+[submodule "jbigkit"]
+	path = jbigkit
+	url = git://github.com/gatgui/jbigkit
