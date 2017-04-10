@@ -9,8 +9,8 @@ out_topdir = excons.OutputBaseDirectory()
 out_incdir = out_topdir + "/include"
 out_libdir = out_topdir + "/lib"
 
-static = (excons.GetArgument("lcms-static", 1, int) != 0)
-suffix = excons.GetArgument("lcms-suffix", "_s" if static else "")
+static = (excons.GetArgument("lcms2-static", 1, int) != 0)
+suffix = excons.GetArgument("lcms2-suffix", "_s" if static else "")
 
 
 def LCMS2Name():
@@ -44,6 +44,19 @@ tificc_deps = []
 tiff_deps = []
 tiff_opts = {}
 
+build_tiff = False
+build_jpeg = False
+
+for tgt in COMMAND_LINE_TARGETS:
+   if tgt == "lcms2-tools":
+      build_jpeg = True
+      build_tiff = True
+   elif tgt in ("libtiff", "tificc"):
+      build_tiff = True
+   elif tgt in ("libjpeg", "jpgicc"):
+      build_jpeg = True
+
+
 # Zlib is required by libtiff
 def ZlibName(static):
    return ("z" if sys.platform != "win32" else ("zlib" if static else "zdll"))
@@ -53,64 +66,69 @@ def ZlibDefines(static):
 
 rv = excons.ExternalLibRequire("zlib", libnameFunc=ZlibName, definesFunc=ZlibDefines)
 if not rv["require"]:
-   excons.Call("zlib", imp=["ZlibName", "ZlibPath", "RequireZlib"])
-   zlibstatic = (excons.GetArgument("zlib-static", 1, int) != 0)
-   def ZlibRequire(env):
-      RequireZlib(static=zlibstatic)
-   tiff_deps.append(excons.cmake.OutputsCachePath("zlib"))
-   tiff_opts["with-zlib"] = os.path.dirname(os.path.dirname(ZlibPath(zlibstatic)))
-   tiff_opts["zlib-static"] = (1 if zlibstatic else 0)
-   tiff_opts["zlib-name"] = ZlibName(zlibstatic)
-else:
-   ZlibRequire = rv["require"]
+   if build_tiff:
+      excons.PrintOnce("Build zlib from source ...")
+      excons.Call("zlib", imp=["ZlibName", "ZlibPath"])
+      zlibstatic = (excons.GetArgument("zlib-static", 1, int) != 0)
+      tiff_deps.append(excons.cmake.OutputsCachePath("zlib"))
+      tiff_opts["with-zlib"] = os.path.dirname(os.path.dirname(ZlibPath(zlibstatic)))
+      tiff_opts["zlib-static"] = (1 if zlibstatic else 0)
+      tiff_opts["zlib-name"] = ZlibName(zlibstatic)
 
 # Jbig is require by libtiff
 rv = excons.ExternalLibRequire("jbig")
 if not rv["require"]:
-   excons.Call("jbigkit", imp=["JbigName", "JbigPath", "RequireJbig"])
-   def JbigRequire(env):
-      RequireJbig(env)
-   tiff_deps.append(JbigPath())
-   tiff_opts["with-jbig"] = os.path.dirname(os.path.dirname(JbigPath()))
-   tiff_opts["jbig-static"] = 1
-   tiff_opts["jbig-name"] = JbigName()
-else:
-   JbigRequire = rv["require"]
+   if build_tiff:
+      excons.PrintOnce("Build jbig from source ...")
+      excons.Call("jbigkit", imp=["JbigName", "JbigPath"])
+      tiff_deps.append(JbigPath())
+      tiff_opts["with-jbig"] = os.path.dirname(os.path.dirname(JbigPath()))
+      tiff_opts["jbig-static"] = 1
+      tiff_opts["jbig-name"] = JbigName()
 
 # Jpeg is required both as a direct dependency and by libtiff
-rv = excons.ExternalLibRequire("jpeg")
+rv = excons.ExternalLibRequire("libjpeg")
 if not rv["require"]:
-   excons.Call("libjpeg-turbo", imp=["LibjpegName", "LibjpegPath", "RequireLibjpeg"])
-   jpegstatic = (excons.GetArgument("libjpeg-static", 1, int) != 0)
-   def JpegRequire(env):
-      RequireLibjpeg(env, static=jpegstatic)
-   jpgicc_deps = ["libjpeg"]
-   if sys.platform == "win32":
-      tiff_deps.append(excons.cmake.OutputsCachePath("libjpeg"))
+   if build_jpeg or build_tiff:
+      excons.PrintOnce("Build libjpeg from source ...")
+      excons.Call("libjpeg-turbo", imp=["LibjpegName", "LibjpegPath", "RequireLibjpeg"])
+      jpegstatic = (excons.GetArgument("libjpeg-static", 1, int) != 0)
+      def JpegRequire(env):
+         RequireLibjpeg(env, static=jpegstatic)
+      jpgicc_deps = ["libjpeg"]
+      if sys.platform == "win32":
+         tiff_deps.append(excons.cmake.OutputsCachePath("libjpeg"))
+      else:
+         tiff_deps.append(excons.automake.OutputsCachePath("libjpeg"))
+      tiff_opts["with-libjpeg"] = os.path.dirname(os.path.dirname(LibjpegPath(jpegstatic)))
+      tiff_opts["libjpeg-static"] = (1 if jpegstatic else 0)
+      tiff_opts["libjpeg-name"] = LibjpegName(jpegstatic)
    else:
-      tiff_deps.append(excons.automake.OutputsCachePath("libjpeg"))
-   tiff_opts["with-libjpeg"] = os.path.dirname(os.path.dirname(LibjpegPath(jpegstatic)))
-   tiff_opts["libjpeg-static"] = (1 if jpegstatic else 0)
-   tiff_opts["libjpeg-name"] = LibjpegName(jpegstatic)
+      def JpegRequire(env):
+         pass
 else:
    JpegRequire = rv["require"]
 
 # libtiff is required as a direct dependency
-rv = excons.ExternalLibRequire("tiff")
+rv = excons.ExternalLibRequire("libtiff")
 if not rv["require"]:
-   print(tiff_deps)
-   excons.cmake.AddConfigureDependencies("libtiff", tiff_deps)
-   excons.Call("libtiff", overrides=tiff_opts, imp=["LibtiffName", "LibtiffPath", "RequireLibtiff"])
-   def TiffRequire(env):
-      RequireLibtiff(env)
-   tificc_deps = ["libtiff"]
+   if build_tiff:
+      excons.PrintOnce("Build libtiff from source ...")
+      excons.cmake.AddConfigureDependencies("libtiff", tiff_deps)
+      excons.Call("libtiff", overrides=tiff_opts, imp=["LibtiffName", "LibtiffPath", "RequireLibtiff"])
+      def TiffRequire(env):
+         RequireLibtiff(env)
+      tificc_deps = ["libtiff"]
+   else:
+      def TiffRequire(env):
+         pass
 else:
    TiffRequire = rv["require"]
 
 
 prjs = [
    {  "name": LCMS2Name(),
-      "alias": "liblcms2",
+      "alias": "lcms2",
       "type": ("staticlib" if static else "sharedlib"),
       "version": "2.8.0",
       "symvis": "default",
@@ -131,7 +149,7 @@ prjs = [
       "incdirs": ["utils/common"],
       "srcs": glob.glob("utils/jpgicc/*.c"),
       "staticlibs": ["lcms2_tools_common"],
-      "deps": ["liblcms2"] + jpgicc_deps,
+      "deps": ["lcms2"] + jpgicc_deps,
       "custom": [RequireLCMS2, JpegRequire]
    },
    {  "name": "tificc",
@@ -140,7 +158,7 @@ prjs = [
       "incdirs": ["utils/common"],
       "srcs": ["utils/tificc/tificc.c"],
       "staticlibs": ["lcms2_tools_common"],
-      "deps": ["liblcms2"] + tificc_deps,
+      "deps": ["lcms2"] + tificc_deps,
       "custom": [RequireLCMS2, TiffRequire]
    },
    {  "name": "linkicc",
@@ -149,7 +167,7 @@ prjs = [
       "incdirs": ["utils/common"],
       "srcs": glob.glob("utils/linkicc/*.c"),
       "staticlibs": ["lcms2_tools_common"],
-      "deps": ["liblcms2"],
+      "deps": ["lcms2"],
       "custom": [RequireLCMS2]
    },
    {  "name": "psicc",
@@ -158,7 +176,7 @@ prjs = [
       "incdirs": ["utils/common"],
       "srcs": glob.glob("utils/psicc/*.c"),
       "staticlibs": ["lcms2_tools_common"],
-      "deps": ["liblcms2"],
+      "deps": ["lcms2"],
       "custom": [RequireLCMS2]
    },
    {  "name": "transicc",
@@ -167,15 +185,19 @@ prjs = [
       "incdirs": ["utils/common"],
       "srcs": glob.glob("utils/transicc/*.c"),
       "staticlibs": ["lcms2_tools_common"],
-      "deps": ["liblcms2"],
+      "deps": ["lcms2"],
       "custom": [RequireLCMS2]
    }
 ]
 
+excons.AddHelpOptions(ext_zlib=excons.ExternalLibHelp("zlib"))
+excons.AddHelpOptions(ext_jbig=excons.ExternalLibHelp("jbig"))
+excons.AddHelpOptions(ext_libjpeg=excons.ExternalLibHelp("libjpeg"))
+excons.AddHelpOptions(ext_libtiff=excons.ExternalLibHelp("libtiff"))
 
 excons.DeclareTargets(env, prjs)
 
 Export("LCMS2Name LCMS2Path RequireLCMS2")
 
-Default(["liblcms2"])
+Default(["lcms2"])
 
