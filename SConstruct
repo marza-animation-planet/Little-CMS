@@ -190,6 +190,10 @@ prjs = [
    }
 ]
 
+excons.AddHelpOptions(lcms2="""LCMS2 OPTIONS
+  lcms2-static=0|1   : Toggle between static and shared library build [1]
+  lcms2-suffix=<str> : Library suffix                                 ['_s' if static, '' otherwise]""")
+
 excons.DeclareTargets(env, prjs)
 
 Export("LCMS2Name LCMS2Path RequireLCMS2")
