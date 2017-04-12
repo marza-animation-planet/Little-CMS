@@ -26,7 +26,7 @@ def LCMS2Path():
 
 def RequireLCMS2(env):
    if not static:
-      env.Append(CPPDEFINES=["CMD_DLL"])
+      env.Append(CPPDEFINES=["CMS_DLL"])
    env.Append(CPPPATH=[out_incdir])
    env.Append(LIBPATH=[out_libdir])
    excons.Link(env, LCMS2Name(), static=static, force=True, silent=True)
@@ -189,11 +189,6 @@ prjs = [
       "custom": [RequireLCMS2]
    }
 ]
-
-excons.AddHelpOptions(ext_zlib=excons.ExternalLibHelp("zlib"))
-excons.AddHelpOptions(ext_jbig=excons.ExternalLibHelp("jbig"))
-excons.AddHelpOptions(ext_libjpeg=excons.ExternalLibHelp("libjpeg"))
-excons.AddHelpOptions(ext_libtiff=excons.ExternalLibHelp("libtiff"))
 
 excons.DeclareTargets(env, prjs)
 
