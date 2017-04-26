@@ -10,11 +10,14 @@ out_incdir = out_topdir + "/include"
 out_libdir = out_topdir + "/lib"
 
 static = (excons.GetArgument("lcms2-static", 1, int) != 0)
-suffix = excons.GetArgument("lcms2-suffix", "_s" if static else "")
+suffix = excons.GetArgument("lcms2-suffix", "")
 
 
 def LCMS2Name():
-   return ("lcms2" + suffix)
+   name = "lcms2" + suffix
+   if sys.platform == "win32" and static:
+      name = "lib" + name
+   return name
 
 def LCMS2Path():
    if sys.platform == "win32":
@@ -29,7 +32,7 @@ def RequireLCMS2(env):
       env.Append(CPPDEFINES=["CMS_DLL"])
    env.Append(CPPPATH=[out_incdir])
    env.Append(LIBPATH=[out_libdir])
-   excons.Link(env, LCMS2Name(), static=static, force=True, silent=True)
+   excons.Link(env, LCMS2Path(), static=static, force=True, silent=True)
    if sys.platform != "win32":
       env.Append(LIBS=["m"])
 
@@ -82,6 +85,7 @@ if not rv["require"]:
       excons.PrintOnce("Build jbig from source ...")
       excons.Call("jbigkit", imp=["JbigName", "JbigPath"])
       tiff_deps.append(JbigPath())
+      tiff_deps.append(out_incdir + "/jbig_ar.h")
       tiff_opts["with-jbig"] = os.path.dirname(os.path.dirname(JbigPath()))
       tiff_opts["jbig-static"] = 1
       tiff_opts["jbig-name"] = JbigName()
@@ -140,6 +144,7 @@ prjs = [
    },
    {  "name": "lcms2_tools_common",
       "type": "staticlib",
+      "desc": "Utility library for command line tools",
       "defines": lcms_defs,
       "srcs": glob.glob("utils/common/*.c")
    },
@@ -192,11 +197,9 @@ prjs = [
 
 excons.AddHelpOptions(lcms2="""LCMS2 OPTIONS
   lcms2-static=0|1   : Toggle between static and shared library build [1]
-  lcms2-suffix=<str> : Library suffix                                 ['_s' if static, '' otherwise]""")
+  lcms2-suffix=<str> : Library suffix                                 []""")
+excons.AddHelpTargets({"lcms2-tools": "jpgicc, tificc, linkicc, psicc, transicc"})
 
 excons.DeclareTargets(env, prjs)
 
 Export("LCMS2Name LCMS2Path RequireLCMS2")
-
-Default(["lcms2"])
-
