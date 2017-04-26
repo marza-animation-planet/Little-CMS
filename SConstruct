@@ -138,14 +138,14 @@ prjs = [
       "symvis": "default",
       "soname": "lib" + LCMS2Name() + ".so.2",
       "install_name": "lib" + LCMS2Name() + ".2.dylib",
-      "defines": lcms_defs + (["CMS_DLL_BUILD"] if not static else []), 
+      "defs": lcms_defs + (["CMS_DLL_BUILD"] if not static else []),
       "srcs": glob.glob("src/*.c"),
       "install": {"include": glob.glob("include/*.h")}
    },
    {  "name": "lcms2_tools_common",
       "type": "staticlib",
       "desc": "Utility library for command line tools",
-      "defines": lcms_defs,
+      "defs": lcms_defs,
       "srcs": glob.glob("utils/common/*.c")
    },
    {  "name": "jpgicc",
