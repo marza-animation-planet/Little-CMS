@@ -47,8 +47,8 @@ tificc_deps = []
 tiff_deps = []
 tiff_opts = {}
 
-build_tiff = False
-build_jpeg = False
+build_tiff = (len(COMMAND_LINE_TARGETS) == 0)
+build_jpeg = (len(COMMAND_LINE_TARGETS) == 0)
 
 for tgt in COMMAND_LINE_TARGETS:
    if tgt == "lcms2-tools":
@@ -154,7 +154,6 @@ prjs = [
       "incdirs": ["utils/common"],
       "srcs": glob.glob("utils/jpgicc/*.c"),
       "staticlibs": ["lcms2_tools_common"],
-      "deps": ["lcms2"] + jpgicc_deps,
       "custom": [RequireLCMS2, JpegRequire]
    },
    {  "name": "tificc",
@@ -163,7 +162,6 @@ prjs = [
       "incdirs": ["utils/common"],
       "srcs": ["utils/tificc/tificc.c"],
       "staticlibs": ["lcms2_tools_common"],
-      "deps": ["lcms2"] + tificc_deps,
       "custom": [RequireLCMS2, TiffRequire]
    },
    {  "name": "linkicc",
@@ -172,7 +170,6 @@ prjs = [
       "incdirs": ["utils/common"],
       "srcs": glob.glob("utils/linkicc/*.c"),
       "staticlibs": ["lcms2_tools_common"],
-      "deps": ["lcms2"],
       "custom": [RequireLCMS2]
    },
    {  "name": "psicc",
@@ -181,7 +178,6 @@ prjs = [
       "incdirs": ["utils/common"],
       "srcs": glob.glob("utils/psicc/*.c"),
       "staticlibs": ["lcms2_tools_common"],
-      "deps": ["lcms2"],
       "custom": [RequireLCMS2]
    },
    {  "name": "transicc",
@@ -190,7 +186,6 @@ prjs = [
       "incdirs": ["utils/common"],
       "srcs": glob.glob("utils/transicc/*.c"),
       "staticlibs": ["lcms2_tools_common"],
-      "deps": ["lcms2"],
       "custom": [RequireLCMS2]
    }
 ]
