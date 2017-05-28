@@ -71,34 +71,49 @@ rv = excons.ExternalLibRequire("zlib", libnameFunc=ZlibName, definesFunc=ZlibDef
 if not rv["require"]:
    if build_tiff:
       excons.PrintOnce("Build zlib from source ...")
-      excons.Call("zlib", imp=["ZlibName", "ZlibPath"])
+      excons.Call("zlib", imp=["ZlibName", "ZlibPath", "RequireZlib"])
       zlibstatic = (excons.GetArgument("zlib-static", 1, int) != 0)
       tiff_deps.append(excons.cmake.OutputsCachePath("zlib"))
       tiff_opts["with-zlib"] = os.path.dirname(os.path.dirname(ZlibPath(zlibstatic)))
       tiff_opts["zlib-static"] = (1 if zlibstatic else 0)
       tiff_opts["zlib-name"] = ZlibName(zlibstatic)
+      def ZlibRequire(env):
+         RequireZlib(env, static=zlibstatic)
+   else:
+      def ZlibRequire(env):
+         pass
+else:
+   ZlibRequire = rv["require"]
 
 # Jbig is require by libtiff
 rv = excons.ExternalLibRequire("jbig")
 if not rv["require"]:
    if build_tiff:
       excons.PrintOnce("Build jbig from source ...")
-      excons.Call("jbigkit", imp=["JbigName", "JbigPath"])
+      excons.Call("jbigkit", imp=["JbigName", "JbigPath", "RequireJbig"])
       tiff_deps.append(JbigPath())
       tiff_deps.append(out_incdir + "/jbig_ar.h")
       tiff_opts["with-jbig"] = os.path.dirname(os.path.dirname(JbigPath()))
       tiff_opts["jbig-static"] = 1
       tiff_opts["jbig-name"] = JbigName()
+      def JbigRequire(env):
+         RequireJbig(env)
+   else:
+      def JbigRequire(env):
+         pass
+else:
+   JbigRequire = rv["require"]
 
 # Jpeg is required both as a direct dependency and by libtiff
-rv = excons.ExternalLibRequire("libjpeg")
+def LibjpegName(static):
+   return "jpeg"
+
+rv = excons.ExternalLibRequire("libjpeg", libnameFunc=LibjpegName)
 if not rv["require"]:
    if build_jpeg or build_tiff:
       excons.PrintOnce("Build libjpeg from source ...")
       excons.Call("libjpeg-turbo", imp=["LibjpegName", "LibjpegPath", "RequireLibjpeg"])
       jpegstatic = (excons.GetArgument("libjpeg-static", 1, int) != 0)
-      def JpegRequire(env):
-         RequireLibjpeg(env, static=jpegstatic)
       jpgicc_deps = ["libjpeg"]
       if sys.platform == "win32":
          tiff_deps.append(excons.cmake.OutputsCachePath("libjpeg"))
@@ -107,6 +122,8 @@ if not rv["require"]:
       tiff_opts["with-libjpeg"] = os.path.dirname(os.path.dirname(LibjpegPath(jpegstatic)))
       tiff_opts["libjpeg-static"] = (1 if jpegstatic else 0)
       tiff_opts["libjpeg-name"] = LibjpegName(jpegstatic)
+      def JpegRequire(env):
+         RequireLibjpeg(env, static=jpegstatic)
    else:
       def JpegRequire(env):
          pass
@@ -114,15 +131,24 @@ else:
    JpegRequire = rv["require"]
 
 # libtiff is required as a direct dependency
-rv = excons.ExternalLibRequire("libtiff")
+def LibtiffName(static):
+   return "tiff"
+
+def LibtiffExtra(env, static):
+   if static:
+      JbigRequire(env)
+      JpegRequire(env)
+      ZlibRequire(env)
+
+rv = excons.ExternalLibRequire("libtiff", libnameFunc=LibtiffName, extraEnvFunc=LibtiffExtra)
 if not rv["require"]:
    if build_tiff:
       excons.PrintOnce("Build libtiff from source ...")
       excons.cmake.AddConfigureDependencies("libtiff", tiff_deps)
       excons.Call("libtiff", overrides=tiff_opts, imp=["LibtiffName", "LibtiffPath", "RequireLibtiff"])
+      tificc_deps = ["libtiff"]
       def TiffRequire(env):
          RequireLibtiff(env)
-      tificc_deps = ["libtiff"]
    else:
       def TiffRequire(env):
          pass
