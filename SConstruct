@@ -61,13 +61,13 @@ for tgt in COMMAND_LINE_TARGETS:
 
 
 # Zlib is required by libtiff
-def ZlibName(static):
+def ZLibname(static):
    return ("z" if sys.platform != "win32" else ("zlib" if static else "zdll"))
 
-def ZlibDefines(static):
+def ZDefines(static):
    return ([] if static else ["ZLIB_DLL"])
 
-rv = excons.ExternalLibRequire("zlib", libnameFunc=ZlibName, definesFunc=ZlibDefines)
+rv = excons.ExternalLibRequire("zlib", libnameFunc=ZLibname, definesFunc=ZDefines)
 if not rv["require"]:
    if build_tiff:
       excons.PrintOnce("Build zlib from source ...")
@@ -105,10 +105,10 @@ else:
    JbigRequire = rv["require"]
 
 # Jpeg is required both as a direct dependency and by libtiff
-def LibjpegName(static):
+def JpegLibname(static):
    return "jpeg"
 
-rv = excons.ExternalLibRequire("libjpeg", libnameFunc=LibjpegName)
+rv = excons.ExternalLibRequire("libjpeg", libnameFunc=JpegLibname)
 if not rv["require"]:
    if build_jpeg or build_tiff:
       excons.PrintOnce("Build libjpeg from source ...")
@@ -131,16 +131,16 @@ else:
    JpegRequire = rv["require"]
 
 # libtiff is required as a direct dependency
-def LibtiffName(static):
+def TiffLibname(static):
    return "tiff"
 
-def LibtiffExtra(env, static):
+def TiffExtra(env, static):
    if static:
       JbigRequire(env)
       JpegRequire(env)
       ZlibRequire(env)
 
-rv = excons.ExternalLibRequire("libtiff", libnameFunc=LibtiffName, extraEnvFunc=LibtiffExtra)
+rv = excons.ExternalLibRequire("libtiff", libnameFunc=TiffLibname, extraEnvFunc=TiffExtra)
 if not rv["require"]:
    if build_tiff:
       excons.PrintOnce("Build libtiff from source ...")
