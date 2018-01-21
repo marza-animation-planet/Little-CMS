@@ -49,6 +49,7 @@ tiff_opts = {}
 
 build_tiff = (len(COMMAND_LINE_TARGETS) == 0)
 build_jpeg = (len(COMMAND_LINE_TARGETS) == 0)
+tiff_use_jbig = (excons.GetArgument("libtiff-use-jbig", 1, int) != 0)
 
 for tgt in COMMAND_LINE_TARGETS:
    if tgt == "lcms2-tools":
@@ -86,23 +87,28 @@ else:
    ZlibRequire = rv["require"]
 
 # Jbig is require by libtiff
-rv = excons.ExternalLibRequire("jbig")
-if not rv["require"]:
-   if build_tiff:
-      excons.PrintOnce("Build jbig from source ...")
-      excons.Call("jbigkit", imp=["JbigName", "JbigPath", "RequireJbig"])
-      tiff_deps.append(JbigPath())
-      tiff_deps.append(out_incdir + "/jbig_ar.h")
-      tiff_opts["with-jbig"] = os.path.dirname(os.path.dirname(JbigPath()))
-      tiff_opts["jbig-static"] = 1
-      tiff_opts["jbig-name"] = JbigName()
-      def JbigRequire(env):
-         RequireJbig(env)
+if tiff_use_jbig:
+   rv = excons.ExternalLibRequire("jbig")
+   if not rv["require"]:
+      if build_tiff:
+         excons.PrintOnce("Build jbig from source ...")
+         excons.Call("jbigkit", imp=["JbigName", "JbigPath", "RequireJbig"])
+         tiff_deps.append(JbigPath())
+         tiff_deps.append(out_incdir + "/jbig_ar.h")
+         tiff_opts["with-jbig"] = os.path.dirname(os.path.dirname(JbigPath()))
+         tiff_opts["jbig-static"] = 1
+         tiff_opts["jbig-name"] = JbigName()
+         def JbigRequire(env):
+            RequireJbig(env)
+      else:
+         def JbigRequire(env):
+            pass
    else:
-      def JbigRequire(env):
-         pass
+      JbigRequire = rv["require"]
 else:
-   JbigRequire = rv["require"]
+   # This should not be necessary as we use the same flag
+   #tiff_opts["libtiff-use-jbig"] = 0
+   pass
 
 # Jpeg is required both as a direct dependency and by libtiff
 def JpegLibname(static):
@@ -136,7 +142,8 @@ def TiffLibname(static):
 
 def TiffExtra(env, static):
    if static:
-      JbigRequire(env)
+      if tiff_use_jbig:
+         JbigRequire(env)
       JpegRequire(env)
       ZlibRequire(env)
 
