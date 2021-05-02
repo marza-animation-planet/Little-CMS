@@ -1,11 +1,23 @@
 
 -----------------------
+2.10 Featured release
+-----------------------
+Added a compilation toggle to remove "register" keyword in API. 
+Previously commercial, fast_float plug-in is now released as open source under GPL3 license.
+MD5 functions are now accesible through plug-in API.
+Added support for Visual Studio 2019
+Bug fixing.
+
+
+-----------------------
 2.9 Maintenance release
 -----------------------
 Several fixes related with security, and therefore not detailed here.
 C++ compiles now without warnings
 Added OSX and clang in travis
 Added a travis-ci test matrix for many compilers and OS. Thanks to Thomas Weber (debian) for this great improvement.
+testbed can now work with dynamic versions of library 
+Fixed wrong planar formatters regarding linestride interpretation
 
 -----------------------
 2.8 Featured release
@@ -144,7 +156,7 @@ Fixed a 0 byte allocation issue in _cmsCreateSubAllocChunk
 Pascal unit now is supported by Free Pascal Compiler
 Fixed a bug on ReadRAWtag 
 Added dictionary metatag support
-Fixed a bug in black preservation and sligtly non-monotonic curves
+Fixed a bug in black preservation and slightly non-monotonic curves
 Added named color functionality
 Fixed a bug that made crash black preservation on CMYK2CMYK devicelinks
 Added functions to retrieve formatters from transforms
