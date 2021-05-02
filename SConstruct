@@ -2,6 +2,7 @@ import os
 import sys
 import glob
 import excons
+import SCons.Script # pylint: disable=import-error
 
 env = excons.MakeBaseEnv()
 
@@ -47,11 +48,11 @@ tificc_deps = []
 tiff_deps = []
 tiff_opts = {}
 
-build_tiff = (len(COMMAND_LINE_TARGETS) == 0)
-build_jpeg = (len(COMMAND_LINE_TARGETS) == 0)
+build_tiff = (len(SCons.Script.COMMAND_LINE_TARGETS) == 0)
+build_jpeg = (len(SCons.Script.COMMAND_LINE_TARGETS) == 0)
 tiff_use_jbig = (excons.GetArgument("libtiff-use-jbig", 1, int) != 0)
 
-for tgt in COMMAND_LINE_TARGETS:
+for tgt in SCons.Script.COMMAND_LINE_TARGETS:
    if tgt == "lcms2-tools":
       build_jpeg = True
       build_tiff = True
@@ -75,11 +76,11 @@ if not rv["require"]:
       excons.Call("zlib", imp=["ZlibName", "ZlibPath", "RequireZlib"])
       zlibstatic = (excons.GetArgument("zlib-static", 1, int) != 0)
       tiff_deps.append(excons.cmake.OutputsCachePath("zlib"))
-      tiff_opts["with-zlib"] = os.path.dirname(os.path.dirname(ZlibPath(zlibstatic)))
+      tiff_opts["with-zlib"] = os.path.dirname(os.path.dirname(ZlibPath(zlibstatic))) # pylint: disable=undefined-variable
       tiff_opts["zlib-static"] = (1 if zlibstatic else 0)
-      tiff_opts["zlib-name"] = ZlibName(zlibstatic)
+      tiff_opts["zlib-name"] = ZlibName(zlibstatic) # pylint: disable=undefined-variable
       def ZlibRequire(env):
-         RequireZlib(env, static=zlibstatic)
+         RequireZlib(env, static=zlibstatic) # pylint: disable=undefined-variable
    else:
       def ZlibRequire(env):
          pass
@@ -93,13 +94,13 @@ if tiff_use_jbig:
       if build_tiff:
          excons.PrintOnce("Build jbig from source ...")
          excons.Call("jbigkit", imp=["JbigName", "JbigPath", "RequireJbig"])
-         tiff_deps.append(JbigPath())
+         tiff_deps.append(JbigPath()) # pylint: disable=undefined-variable
          tiff_deps.append(out_incdir + "/jbig_ar.h")
-         tiff_opts["with-jbig"] = os.path.dirname(os.path.dirname(JbigPath()))
+         tiff_opts["with-jbig"] = os.path.dirname(os.path.dirname(JbigPath())) # pylint: disable=undefined-variable
          tiff_opts["jbig-static"] = 1
-         tiff_opts["jbig-name"] = JbigName()
+         tiff_opts["jbig-name"] = JbigName() # pylint: disable=undefined-variable
          def JbigRequire(env):
-            RequireJbig(env)
+            RequireJbig(env) # pylint: disable=undefined-variable
       else:
          def JbigRequire(env):
             pass
@@ -125,11 +126,11 @@ if not rv["require"]:
          tiff_deps.append(excons.cmake.OutputsCachePath("libjpeg"))
       else:
          tiff_deps.append(excons.automake.OutputsCachePath("libjpeg"))
-      tiff_opts["with-libjpeg"] = os.path.dirname(os.path.dirname(LibjpegPath(jpegstatic)))
+      tiff_opts["with-libjpeg"] = os.path.dirname(os.path.dirname(LibjpegPath(jpegstatic))) # pylint: disable=undefined-variable
       tiff_opts["libjpeg-static"] = (1 if jpegstatic else 0)
-      tiff_opts["libjpeg-name"] = LibjpegName(jpegstatic)
+      tiff_opts["libjpeg-name"] = LibjpegName(jpegstatic) # pylint: disable=undefined-variable
       def JpegRequire(env):
-         RequireLibjpeg(env, static=jpegstatic)
+         RequireLibjpeg(env, static=jpegstatic) # pylint: disable=undefined-variable
    else:
       def JpegRequire(env):
          pass
@@ -155,7 +156,7 @@ if not rv["require"]:
       excons.Call("libtiff", overrides=tiff_opts, imp=["LibtiffName", "LibtiffPath", "RequireLibtiff"])
       tificc_deps = ["libtiff"]
       def TiffRequire(env):
-         RequireLibtiff(env)
+         RequireLibtiff(env) # pylint: disable=undefined-variable
    else:
       def TiffRequire(env):
          pass
@@ -230,4 +231,4 @@ excons.AddHelpTargets({"lcms2-tools": "jpgicc, tificc, linkicc, psicc, transicc"
 
 excons.DeclareTargets(env, prjs)
 
-Export("LCMS2Name LCMS2Path RequireLCMS2")
+SCons.Script.Export("LCMS2Name LCMS2Path RequireLCMS2")
