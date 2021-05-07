@@ -67,7 +67,7 @@ def ZLibname(static):
    return ("z" if sys.platform != "win32" else ("zlib" if static else "zdll"))
 
 def ZDefines(static):
-   return ([] if static else ["ZLIB_DLL"])
+   return ([] if (static or sys.platform != "win32") else ["ZLIB_DLL"])
 
 rv = excons.ExternalLibRequire("zlib", libnameFunc=ZLibname, definesFunc=ZDefines)
 if not rv["require"]:
@@ -95,7 +95,7 @@ if tiff_use_jbig:
          excons.PrintOnce("Build jbig from source ...")
          excons.Call("jbigkit", imp=["JbigName", "JbigPath", "RequireJbig"])
          tiff_deps.append(JbigPath()) # pylint: disable=undefined-variable
-         tiff_deps.append(out_incdir + "/jbig_ar.h")
+         tiff_deps.extend([out_incdir + "/jbig_ar.h", out_incdir + "/jbig.h"])
          tiff_opts["with-jbig"] = os.path.dirname(os.path.dirname(JbigPath())) # pylint: disable=undefined-variable
          tiff_opts["jbig-static"] = 1
          tiff_opts["jbig-name"] = JbigName() # pylint: disable=undefined-variable
