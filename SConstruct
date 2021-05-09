@@ -106,7 +106,7 @@ prjs = [
    {  "name": LCMS2Name(),
       "alias": "lcms2",
       "type": ("staticlib" if static else "sharedlib"),
-      "version": "2.9.0",
+      "version": "2.12.0",
       "symvis": "default",
       "soname": "lib" + LCMS2Name() + ".so.2",
       "install_name": "lib" + LCMS2Name() + ".2.dylib",
