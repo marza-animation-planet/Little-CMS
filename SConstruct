@@ -43,14 +43,11 @@ if not static:
    lcms_defs.append("CMS_DLL")
 
 
-jpgicc_deps = []
-tificc_deps = []
 tiff_deps = []
 tiff_opts = {}
 
 build_tiff = (len(SCons.Script.COMMAND_LINE_TARGETS) == 0)
 build_jpeg = (len(SCons.Script.COMMAND_LINE_TARGETS) == 0)
-tiff_use_jbig = (excons.GetArgument("libtiff-use-jbig", 1, int) != 0)
 
 for tgt in SCons.Script.COMMAND_LINE_TARGETS:
    if tgt == "lcms2-tools":
@@ -61,67 +58,16 @@ for tgt in SCons.Script.COMMAND_LINE_TARGETS:
    elif tgt in ("libjpeg", "jpgicc"):
       build_jpeg = True
 
+# Jpeg is required both as a direct dependency for jpgicc tool and by libtiff
+if build_jpeg or build_tiff:
+   def JpegLibname(static):
+      return "jpeg"
 
-# Zlib is required by libtiff
-def ZLibname(static):
-   return ("z" if sys.platform != "win32" else ("zlib" if static else "zdll"))
-
-def ZDefines(static):
-   return ([] if static else ["ZLIB_DLL"])
-
-rv = excons.ExternalLibRequire("zlib", libnameFunc=ZLibname, definesFunc=ZDefines)
-if not rv["require"]:
-   if build_tiff:
-      excons.PrintOnce("Build zlib from source ...")
-      excons.Call("zlib", imp=["ZlibName", "ZlibPath", "RequireZlib"])
-      zlibstatic = (excons.GetArgument("zlib-static", 1, int) != 0)
-      tiff_deps.append(excons.cmake.OutputsCachePath("zlib"))
-      tiff_opts["with-zlib"] = os.path.dirname(os.path.dirname(ZlibPath(zlibstatic))) # pylint: disable=undefined-variable
-      tiff_opts["zlib-static"] = (1 if zlibstatic else 0)
-      tiff_opts["zlib-name"] = ZlibName(zlibstatic) # pylint: disable=undefined-variable
-      def ZlibRequire(env):
-         RequireZlib(env, static=zlibstatic) # pylint: disable=undefined-variable
-   else:
-      def ZlibRequire(env):
-         pass
-else:
-   ZlibRequire = rv["require"]
-
-# Jbig is require by libtiff
-if tiff_use_jbig:
-   rv = excons.ExternalLibRequire("jbig")
+   rv = excons.ExternalLibRequire("libjpeg", libnameFunc=JpegLibname)
    if not rv["require"]:
-      if build_tiff:
-         excons.PrintOnce("Build jbig from source ...")
-         excons.Call("jbigkit", imp=["JbigName", "JbigPath", "RequireJbig"])
-         tiff_deps.append(JbigPath()) # pylint: disable=undefined-variable
-         tiff_deps.append(out_incdir + "/jbig_ar.h")
-         tiff_opts["with-jbig"] = os.path.dirname(os.path.dirname(JbigPath())) # pylint: disable=undefined-variable
-         tiff_opts["jbig-static"] = 1
-         tiff_opts["jbig-name"] = JbigName() # pylint: disable=undefined-variable
-         def JbigRequire(env):
-            RequireJbig(env) # pylint: disable=undefined-variable
-      else:
-         def JbigRequire(env):
-            pass
-   else:
-      JbigRequire = rv["require"]
-else:
-   # This should not be necessary as we use the same flag
-   #tiff_opts["libtiff-use-jbig"] = 0
-   pass
-
-# Jpeg is required both as a direct dependency and by libtiff
-def JpegLibname(static):
-   return "jpeg"
-
-rv = excons.ExternalLibRequire("libjpeg", libnameFunc=JpegLibname)
-if not rv["require"]:
-   if build_jpeg or build_tiff:
-      excons.PrintOnce("Build libjpeg from source ...")
-      excons.Call("libjpeg-turbo", imp=["LibjpegName", "LibjpegPath", "RequireLibjpeg"])
+      excons.PrintOnce("LCMS2: Build libjpeg from source ...")
+      excons.Call("libjpeg-turbo", targets=["libjpeg"], imp=["LibjpegName", "LibjpegPath", "RequireLibjpeg"])
       jpegstatic = (excons.GetArgument("libjpeg-static", 1, int) != 0)
-      jpgicc_deps = ["libjpeg"]
       if sys.platform == "win32":
          tiff_deps.append(excons.cmake.OutputsCachePath("libjpeg"))
       else:
@@ -132,43 +78,35 @@ if not rv["require"]:
       def JpegRequire(env):
          RequireLibjpeg(env, static=jpegstatic) # pylint: disable=undefined-variable
    else:
-      def JpegRequire(env):
-         pass
+      JpegRequire = rv["require"]
 else:
-   JpegRequire = rv["require"]
+   def JpegRequire(env):
+      pass
 
-# libtiff is required as a direct dependency
-def TiffLibname(static):
-   return "tiff"
+# libtiff is required as a direct dependency for tificc tool
+if build_tiff:
+   def TiffLibname(static):
+      return "tiff"
 
-def TiffExtra(env, static):
-   if static:
-      if tiff_use_jbig:
-         JbigRequire(env)
-      JpegRequire(env)
-      ZlibRequire(env)
-
-rv = excons.ExternalLibRequire("libtiff", libnameFunc=TiffLibname, extraEnvFunc=TiffExtra)
-if not rv["require"]:
-   if build_tiff:
-      excons.PrintOnce("Build libtiff from source ...")
+   rv = excons.ExternalLibRequire("libtiff", libnameFunc=TiffLibname)
+   if not rv["require"]:
+      excons.PrintOnce("LCMS2: Build libtiff from source ...")
       excons.cmake.AddConfigureDependencies("libtiff", tiff_deps)
-      excons.Call("libtiff", overrides=tiff_opts, imp=["LibtiffName", "LibtiffPath", "RequireLibtiff"])
-      tificc_deps = ["libtiff"]
+      excons.Call("libtiff", targets=["libtiff"], overrides=tiff_opts, imp=["LibtiffName", "LibtiffPath", "RequireLibtiff"])
       def TiffRequire(env):
          RequireLibtiff(env) # pylint: disable=undefined-variable
    else:
-      def TiffRequire(env):
-         pass
+      TiffRequire = rv["require"]
 else:
-   TiffRequire = rv["require"]
+   def TiffRequire(env):
+      pass
 
 
 prjs = [
    {  "name": LCMS2Name(),
       "alias": "lcms2",
       "type": ("staticlib" if static else "sharedlib"),
-      "version": "2.9.0",
+      "version": "2.11.0",
       "symvis": "default",
       "soname": "lib" + LCMS2Name() + ".so.2",
       "install_name": "lib" + LCMS2Name() + ".2.dylib",
