@@ -89,7 +89,6 @@ prjs = [
       "alias": "lcms2",
       "type": ("staticlib" if static else "sharedlib"),
       "version": "2.11.0",
-      "symvis": "default",
       "soname": "lib" + LCMS2Name() + ".so.2",
       "install_name": "lib" + LCMS2Name() + ".2.dylib",
       "defs": lcms_defs + (["CMS_DLL_BUILD"] if not static else []),
